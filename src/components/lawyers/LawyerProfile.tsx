@@ -113,9 +113,27 @@ const LawyerProfile: React.FC = () => {
               <div className="relative h-48 bg-blue-600">
                 <div className="absolute -bottom-16 left-8">
                   <img
-                    src={lawyer.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(lawyer.name)}&size=128`}
+                    src={lawyer.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(lawyer.name)}&background=random&size=128`}
                     alt={lawyer.name}
                     className="w-32 h-32 rounded-full border-4 border-white object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      // Fallback to a data URL for a simple colored background with initials
+                      const initials = lawyer.name
+                        .split(' ')
+                        .map(word => word[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2);
+                      const colors = ['#1a365d', '#2d3748', '#4a5568', '#2c5282', '#2b6cb0'];
+                      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                      target.src = `data:image/svg+xml,${encodeURIComponent(`
+                        <svg width="128" height="128" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="64" cy="64" r="64" fill="${randomColor}"/>
+                          <text x="50%" y="50%" font-family="Arial" font-size="40" fill="white" text-anchor="middle" dy=".3em">${initials}</text>
+                        </svg>
+                      `)}`;
+                    }}
                   />
                 </div>
               </div>

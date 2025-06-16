@@ -3,51 +3,66 @@ import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-gray-800 text-white">
-      <div className="container mx-auto px-4 py-8">
+    <footer className="bg-gray-900 text-white">
+      <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Legal Axis</h3>
-            <p className="text-gray-400">
-              Your trusted partner in legal services and solutions.
+            <h3 className="text-xl font-bold mb-4">Legal Axis</h3>
+            <p className="text-gray-300">
+              Connecting clients with top legal professionals for quality legal services.
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+            <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/" className="text-gray-400 hover:text-white">
+                <Link to="/" className="text-gray-300 hover:text-white">
                   Home
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="text-gray-400 hover:text-white">
-                  About Us
+                <Link to="/find-lawyer" className="text-gray-300 hover:text-white">
+                  Find a Lawyer
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="text-gray-400 hover:text-white">
-                  Contact Us
+                <Link to="/join" className="text-gray-300 hover:text-white">
+                  Join as a Lawyer
+                </Link>
+              </li>
+              <li>
+                <Link to="/about" className="text-gray-300 hover:text-white">
+                  About Us
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Legal */}
+          {/* Services */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Legal</h3>
+            <h4 className="text-lg font-semibold mb-4">Services</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/terms" className="text-gray-400 hover:text-white">
-                  Terms & Conditions
+                <Link to="/services/contract-review" className="text-gray-300 hover:text-white">
+                  Contract Review
                 </Link>
               </li>
               <li>
-                <Link to="/privacy" className="text-gray-400 hover:text-white">
-                  Privacy Policy
+                <Link to="/services/legal-consultation" className="text-gray-300 hover:text-white">
+                  Legal Consultation
+                </Link>
+              </li>
+              <li>
+                <Link to="/services/document-preparation" className="text-gray-300 hover:text-white">
+                  Document Preparation
+                </Link>
+              </li>
+              <li>
+                <Link to="/services/business-law" className="text-gray-300 hover:text-white">
+                  Business Law
                 </Link>
               </li>
             </ul>
@@ -55,23 +70,30 @@ const Footer: React.FC = () => {
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Contact Us</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li>Email: contact@legalaxis.com</li>
-              <li>Phone: (555) 123-4567</li>
-              <li>Address: 123 Legal Street, Suite 100</li>
+            <h4 className="text-lg font-semibold mb-4">Contact</h4>
+            <ul className="space-y-2">
+              <li className="text-gray-300">
+                Email: info@legalaxis.com
+              </li>
+              <li className="text-gray-300">
+                Phone: (555) 123-4567
+              </li>
+              <li className="text-gray-300">
+                Address: 123 Legal Street, Suite 100<br />
+                New York, NY 10001
+              </li>
             </ul>
           </div>
         </div>
 
         {/* Social Media Links */}
-        <div className="mt-8 pt-8 border-t border-gray-700">
+        <div className="mt-12 pt-8 border-t border-gray-800">
           <div className="flex justify-center space-x-6">
             <a
               href="https://facebook.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white"
+              className="text-gray-300 hover:text-white transition-colors duration-200"
             >
               <span className="sr-only">Facebook</span>
               <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -82,7 +104,7 @@ const Footer: React.FC = () => {
               href="https://twitter.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white"
+              className="text-gray-300 hover:text-white transition-colors duration-200"
             >
               <span className="sr-only">Twitter</span>
               <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -93,7 +115,7 @@ const Footer: React.FC = () => {
               href="https://linkedin.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white"
+              className="text-gray-300 hover:text-white transition-colors duration-200"
             >
               <span className="sr-only">LinkedIn</span>
               <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -104,8 +126,8 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Copyright */}
-        <div className="mt-8 text-center text-gray-400">
-          <p>&copy; {new Date().getFullYear()} Legal Axis. All rights reserved.</p>
+        <div className="mt-8 text-center text-gray-300 text-sm">
+          © {new Date().getFullYear()} Legal Axis. All rights reserved.
         </div>
       </div>
     </footer>

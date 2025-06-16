@@ -127,9 +127,27 @@ export default function LawyersList() {
               >
                 <div className="aspect-w-16 aspect-h-9">
                   <img
-                    src={lawyer.imageUrl || 'https://via.placeholder.com/400x300'}
+                    src={lawyer.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(lawyer.name)}&background=random&size=400`}
                     alt={lawyer.name}
                     className="w-full h-48 object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      // Fallback to a data URL for a simple colored background with initials
+                      const initials = lawyer.name
+                        .split(' ')
+                        .map(word => word[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2);
+                      const colors = ['#1a365d', '#2d3748', '#4a5568', '#2c5282', '#2b6cb0'];
+                      const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                      target.src = `data:image/svg+xml,${encodeURIComponent(`
+                        <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+                          <rect width="400" height="300" fill="${randomColor}"/>
+                          <text x="50%" y="50%" font-family="Arial" font-size="80" fill="white" text-anchor="middle" dy=".3em">${initials}</text>
+                        </svg>
+                      `)}`;
+                    }}
                   />
                 </div>
                 <div className="p-6">

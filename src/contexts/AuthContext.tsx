@@ -7,13 +7,20 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 import type { User, UserCredential } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { auth, db } from '../config/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+
+interface UserData {
+  userType: 'lawyer' | 'client';
+  email: string;
+}
 
 interface AuthContextType {
   user: User | null;
+  userData: UserData | null;
   loading: boolean;
   signUp: (email: string, password: string) => Promise<UserCredential>;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<UserCredential>;
   logout: () => Promise<void>;
 }
 
@@ -33,11 +40,21 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      if (user) {
+        // Fetch user data from Firestore
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          setUserData(userDoc.data() as UserData);
+        }
+      } else {
+        setUserData(null);
+      }
       setLoading(false);
     });
 
@@ -50,7 +67,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    return result;
   };
 
   const logout = async () => {
@@ -59,6 +77,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const value = {
     user,
+    userData,
     loading,
     signUp,
     signIn,

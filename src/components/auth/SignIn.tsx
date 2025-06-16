@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import Navbar from '../Navbar';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -16,8 +17,22 @@ export default function SignIn() {
     try {
       setError('');
       setLoading(true);
-      await signIn(email, password);
-      navigate('/');
+      const { user } = await signIn(email, password);
+      
+      // Fetch user data from Firestore
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (!userDoc.exists()) {
+        throw new Error('User data not found');
+      }
+
+      const userData = userDoc.data();
+      
+      // Redirect based on user type
+      if (userData.userType === 'lawyer') {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError('Failed to sign in. Please check your credentials.');
     } finally {
@@ -27,7 +42,6 @@ export default function SignIn() {
 
   return (
     <>
-      <Navbar />
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 md:p-10">

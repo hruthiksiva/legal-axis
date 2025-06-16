@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, userData, logout } = useAuth();
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -20,9 +21,16 @@ const Navbar: React.FC = () => {
       await logout();
       setIsProfileOpen(false);
       setIsMenuOpen(false);
+      navigate('/');
     } catch (error) {
       console.error('Failed to log out:', error);
     }
+  };
+
+  const handleDashboardClick = () => {
+    setIsProfileOpen(false);
+    setIsMenuOpen(false);
+    navigate('/dashboard');
   };
 
   return (
@@ -38,11 +46,12 @@ const Navbar: React.FC = () => {
           <div className="hidden md:flex items-center space-x-8">
             <Link to="/" className="text-gray-600 hover:text-gray-900 transition-colors duration-200">Home</Link>
             <Link to="/lawyers" className="text-gray-600 hover:text-gray-900 transition-colors duration-200">Lawyers</Link>
+            <Link to="/cases" className="text-gray-600 hover:text-gray-900 transition-colors duration-200">Cases</Link>
             <Link to="/about" className="text-gray-600 hover:text-gray-900 transition-colors duration-200">About Us</Link>
             <Link to="/contact" className="text-gray-600 hover:text-gray-900 transition-colors duration-200">Contact Us</Link>
             
-            {/* Profile Section */}
-            {user && (
+            {/* Auth Section */}
+            {user ? (
               <div className="relative">
                 <button
                   onClick={toggleProfile}
@@ -74,13 +83,12 @@ const Navbar: React.FC = () => {
                     >
                       View Profile
                     </Link>
-                    <Link
-                      to="/dashboard"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsProfileOpen(false)}
+                    <button
+                      onClick={handleDashboardClick}
+                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                      Dashboard
-                    </Link>
+                      {userData?.userType === 'client' ? 'Client Dashboard' : 'Lawyer Dashboard'}
+                    </button>
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -90,12 +98,19 @@ const Navbar: React.FC = () => {
                   </div>
                 )}
               </div>
+            ) : (
+              <Link
+                to="/signin"
+                className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
+              >
+                Sign In
+              </Link>
             )}
           </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center">
-            {user && (
+            {user ? (
               <div className="mr-4">
                 <img
                   src={user.photoURL || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(user.displayName || 'User')}
@@ -103,6 +118,13 @@ const Navbar: React.FC = () => {
                   className="w-8 h-8 rounded-full"
                 />
               </div>
+            ) : (
+              <Link
+                to="/signin"
+                className="mr-4 text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Sign In
+              </Link>
             )}
             <button
               onClick={toggleMenu}
@@ -146,6 +168,13 @@ const Navbar: React.FC = () => {
                 Lawyers
               </Link>
               <Link
+                to="/cases"
+                className="block px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
+                onClick={toggleMenu}
+              >
+                Cases
+              </Link>
+              <Link
                 to="/about"
                 className="block px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
                 onClick={toggleMenu}
@@ -159,7 +188,7 @@ const Navbar: React.FC = () => {
               >
                 Contact Us
               </Link>
-              {user && (
+              {user ? (
                 <>
                   <Link
                     to="/profile"
@@ -168,13 +197,12 @@ const Navbar: React.FC = () => {
                   >
                     View Profile
                   </Link>
-                  <Link
-                    to="/dashboard"
-                    className="block px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
-                    onClick={toggleMenu}
+                  <button
+                    onClick={handleDashboardClick}
+                    className="block w-full text-left px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
                   >
-                    Dashboard
-                  </Link>
+                    {userData?.userType === 'client' ? 'Client Dashboard' : 'Lawyer Dashboard'}
+                  </button>
                   <button
                     onClick={handleLogout}
                     className="block w-full text-left px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md"
@@ -182,6 +210,14 @@ const Navbar: React.FC = () => {
                     Logout
                   </button>
                 </>
+              ) : (
+                <Link
+                  to="/signin"
+                  className="block px-3 py-2 text-blue-600 hover:text-blue-700 hover:bg-gray-50 rounded-md"
+                  onClick={toggleMenu}
+                >
+                  Sign In
+                </Link>
               )}
             </div>
           </div>

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
-import Navbar from '../Navbar';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 type UserType = 'lawyer' | 'client';
 
@@ -17,6 +17,14 @@ export default function SignUp() {
   const navigate = useNavigate();
   const { signUp } = useAuth();
 
+  const checkEmailExists = async (email: string) => {
+    // Query Firestore to check if email exists
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('email', '==', email));
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -27,6 +35,14 @@ export default function SignUp() {
     try {
       setError('');
       setLoading(true);
+
+      // Check if email already exists
+      const emailExists = await checkEmailExists(email);
+      if (emailExists) {
+        setError('An account with this email already exists. Please sign in instead.');
+        return;
+      }
+
       const { user } = await signUp(email, password);
       
       await setDoc(doc(db, 'users', user.uid), {
@@ -35,9 +51,18 @@ export default function SignUp() {
         createdAt: new Date().toISOString(),
       });
 
-      navigate('/');
+      // Redirect based on user type
+      if (userType === 'lawyer') {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
-      setError('Failed to create an account');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to create an account');
+      }
     } finally {
       setLoading(false);
     }
@@ -45,7 +70,6 @@ export default function SignUp() {
 
   return (
     <>
-      <Navbar />
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 md:p-10">

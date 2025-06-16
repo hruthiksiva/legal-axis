@@ -8,10 +8,16 @@ import ContactUs from './pages/ContactUs';
 import TermsAndConditions from './pages/TermsAndConditions';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Profile from './pages/Profile';
-import Dashboard from './pages/Dashboard';
+import Dashboard from './components/Dashboard';
 import LawyersList from './components/lawyers/LawyersList';
 import LawyerProfile from './components/lawyers/LawyerProfile';
+import SignIn from './components/auth/SignIn';
+import SignUp from './components/auth/SignUp';
 import { AuthProvider } from './contexts/AuthContext';
+import CasesList from './components/cases/CasesList';
+import CaseDetail from './components/cases/CaseDetail';
+import CreateCase from './components/cases/CreateCase';
+import EditCase from './components/cases/EditCase';
 
 const App: React.FC = () => {
   return (
@@ -30,6 +36,12 @@ const App: React.FC = () => {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/lawyers" element={<LawyersList />} />
               <Route path="/lawyers/:id" element={<LawyerProfile />} />
+              <Route path="/cases" element={<CasesList />} />
+              <Route path="/cases/create" element={<CreateCase />} />
+              <Route path="/cases/:id" element={<CaseDetail />} />
+              <Route path="/cases/:id/edit" element={<EditCase />} />
+              <Route path="/signin" element={<SignIn />} />
+              <Route path="/signup" element={<SignUp />} />
             </Routes>
           </div>
           <Footer />
