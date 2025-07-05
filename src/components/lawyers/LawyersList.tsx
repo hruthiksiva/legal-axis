@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
+import { motion } from 'framer-motion';
 
 interface Lawyer {
   id: string;
@@ -82,14 +83,29 @@ export default function LawyersList() {
   }, [searchTerm, selectedSpecialization, lawyers]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <motion.div 
+      className="min-h-screen bg-gray-50 py-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-8">
+        <motion.div 
+          className="text-center mb-8"
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+        >
           <h1 className="text-3xl font-bold text-gray-900">Find a Lawyer</h1>
           <p className="mt-2 text-gray-600">Browse our network of experienced legal professionals</p>
-        </div>
+        </motion.div>
 
-        <div className="mb-8 space-y-4 sm:space-y-0 sm:flex sm:space-x-4">
+        <motion.div 
+          className="mb-8 space-y-4 sm:space-y-0 sm:flex sm:space-x-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           <div className="flex-1">
             <input
               type="text"
@@ -111,46 +127,47 @@ export default function LawyersList() {
               </option>
             ))}
           </select>
-        </div>
+        </motion.div>
 
         {loading ? (
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <motion.div 
+            className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: {
+                transition: {
+                  staggerChildren: 0.1
+                }
+              }
+            }}
+          >
             {filteredLawyers.map((lawyer) => (
-              <Link
+              <motion.div
                 key={lawyer.id}
-                to={`/lawyers/${lawyer.id}`}
-                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="bg-white rounded-2xl shadow-md overflow-hidden transition-shadow duration-300"
               >
-                <div className="aspect-w-16 aspect-h-9">
+                <div className="relative">
                   <img
-                    src={lawyer.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(lawyer.name)}&background=random&size=400`}
+                    src={
+                      lawyer.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(lawyer.name)}&background=random&size=400`
+                    }
                     alt={lawyer.name}
-                    className="w-full h-48 object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      // Fallback to a data URL for a simple colored background with initials
-                      const initials = lawyer.name
-                        .split(' ')
-                        .map(word => word[0])
-                        .join('')
-                        .toUpperCase()
-                        .slice(0, 2);
-                      const colors = ['#1a365d', '#2d3748', '#4a5568', '#2c5282', '#2b6cb0'];
-                      const randomColor = colors[Math.floor(Math.random() * colors.length)];
-                      target.src = `data:image/svg+xml,${encodeURIComponent(`
-                        <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-                          <rect width="400" height="300" fill="${randomColor}"/>
-                          <text x="50%" y="50%" font-family="Arial" font-size="80" fill="white" text-anchor="middle" dy=".3em">${initials}</text>
-                        </svg>
-                      `)}`;
-                    }}
+                    className="w-full h-48 object-cover rounded-t-2xl"
                   />
                 </div>
-                <div className="p-6">
+                <Link to={`/lawyers/${lawyer.id}`} className="block p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">{lawyer.name}</h3>
                   <div className="flex flex-wrap gap-2 mb-3">
                     {(lawyer.specialization || []).map((spec) => (
@@ -170,10 +187,10 @@ export default function LawyersList() {
                     </div>
                     <span className="text-gray-600">{lawyer.experience} years experience</span>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
 
         {!loading && filteredLawyers.length === 0 && (
@@ -182,6 +199,7 @@ export default function LawyersList() {
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
-} 
+}
+

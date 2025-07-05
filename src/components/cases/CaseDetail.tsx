@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
+import { motion } from 'framer-motion';
 
 interface Case {
   id: string;
@@ -47,8 +49,6 @@ const CaseDetail: React.FC = () => {
         }
 
         const caseData = caseDoc.data();
-        
-        // Fetch applications for this case
         const applicationsQuery = query(
           collection(db, 'applications'),
           where('caseId', '==', id)
@@ -60,12 +60,23 @@ const CaseDetail: React.FC = () => {
           createdAt: doc.data().createdAt?.toDate().toLocaleDateString() || 'N/A'
         })) as Application[];
 
-        setCaseData({
+        const caseDataRaw = caseDoc.data();
+
+        const caseDataFormatted: Case = {
           id: caseDoc.id,
-          ...caseData,
-          createdAt: caseData.createdAt?.toDate().toLocaleDateString() || 'N/A',
+          title: caseDataRaw.title,
+          description: caseDataRaw.description,
+          category: caseDataRaw.category,
+          status: caseDataRaw.status,
+          budget: caseDataRaw.budget,
+          deadline: caseDataRaw.deadline,
+          clientId: caseDataRaw.clientId,
+          clientName: caseDataRaw.clientName,
+          createdAt: caseDataRaw.createdAt?.toDate().toLocaleDateString() || 'N/A',
           applications
-        });
+        };
+
+        setCaseData(caseDataFormatted);
       } catch (error) {
         console.error('Error fetching case:', error);
       } finally {
@@ -92,7 +103,6 @@ const CaseDetail: React.FC = () => {
 
       setProposal('');
       setShowProposalForm(false);
-      // Refresh case data to show new application
       window.location.reload();
     } catch (error) {
       console.error('Error submitting application:', error);
@@ -122,9 +132,19 @@ const CaseDetail: React.FC = () => {
   const hasApplied = caseData.applications?.some(app => app.lawyerId === user?.uid);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <motion.div 
+      className="min-h-screen bg-gray-50 py-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <motion.div 
+          className="bg-white rounded-lg shadow-md overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           <div className="p-6">
             <div className="flex justify-between items-start mb-6">
               <div>
@@ -176,12 +196,14 @@ const CaseDetail: React.FC = () => {
             {user?.userType === 'lawyer' && !isClient && !hasApplied && (
               <div className="mt-8">
                 {!showProposalForm ? (
-                  <button
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => setShowProposalForm(true)}
                     className="w-full px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     Apply for this Case
-                  </button>
+                  </motion.button>
                 ) : (
                   <form onSubmit={handleApply} className="space-y-4">
                     <div>
@@ -205,12 +227,14 @@ const CaseDetail: React.FC = () => {
                       >
                         Cancel
                       </button>
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                         type="submit"
                         className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
                         Submit Application
-                      </button>
+                      </motion.button>
                     </div>
                   </form>
                 )}
@@ -222,7 +246,11 @@ const CaseDetail: React.FC = () => {
                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Applications</h2>
                 <div className="space-y-4">
                   {caseData.applications.map((application) => (
-                    <div key={application.id} className="border rounded-lg p-4">
+                    <motion.div
+                      key={application.id}
+                      className="border rounded-lg p-4"
+                      whileHover={{ scale: 1.01 }}
+                    >
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="text-lg font-medium text-gray-900">{application.lawyerName}</h3>
                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
@@ -237,16 +265,16 @@ const CaseDetail: React.FC = () => {
                       <div className="text-sm text-gray-500">
                         Applied on {application.createdAt}
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
-export default CaseDetail; 
+export default CaseDetail;

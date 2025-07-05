@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 
 const Dashboard: React.FC = () => {
   // Mock data - replace with actual data from your backend

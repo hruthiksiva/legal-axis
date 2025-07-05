@@ -1,67 +1,68 @@
-import React from 'react';
+import * as React from 'react';
 import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-white text-black border-t border-gray-200 shadow-inner">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
             <h3 className="text-xl font-bold mb-4">Legal Axis</h3>
-            <p className="text-gray-300">
+            <p className="text-gray-600">
               Connecting clients with top legal professionals for quality legal services.
             </p>
           </div>
 
           {/* Quick Links */}
-          <div>
-            <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link to="/" className="text-gray-300 hover:text-white">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link to="/find-lawyer" className="text-gray-300 hover:text-white">
-                  Find a Lawyer
-                </Link>
-              </li>
-              <li>
-                <Link to="/join" className="text-gray-300 hover:text-white">
-                  Join as a Lawyer
-                </Link>
-              </li>
-              <li>
-                <Link to="/about" className="text-gray-300 hover:text-white">
-                  About Us
-                </Link>
-              </li>
-            </ul>
-          </div>
+<div>
+  <h4 className="text-lg font-semibold mb-4">Quick Links</h4>
+  <ul className="space-y-2">
+    <li>
+      <Link to="/" className="text-gray-600 hover:text-orange-500 transition duration-300">
+        Home
+      </Link>
+    </li>
+    <li>
+      <Link to="/lawyers" className="text-gray-600 hover:text-orange-500 transition duration-300">
+        Find a Lawyer
+      </Link>
+    </li>
+    <li>
+      <Link to="/join" className="text-gray-600 hover:text-orange-500 transition duration-300">
+        Join as a Lawyer
+      </Link>
+    </li>
+    <li>
+      <Link to="/about" className="text-gray-600 hover:text-orange-500 transition duration-300">
+        About Us
+      </Link>
+    </li>
+  </ul>
+</div>
+
 
           {/* Services */}
           <div>
             <h4 className="text-lg font-semibold mb-4">Services</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/services/contract-review" className="text-gray-300 hover:text-white">
+                <Link to="/services/contract-review" className="text-gray-600 hover:text-orange-500 transition duration-300">
                   Contract Review
                 </Link>
               </li>
               <li>
-                <Link to="/services/legal-consultation" className="text-gray-300 hover:text-white">
+                <Link to="/services/legal-consultation" className="text-gray-600 hover:text-orange-500 transition duration-300">
                   Legal Consultation
                 </Link>
               </li>
               <li>
-                <Link to="/services/document-preparation" className="text-gray-300 hover:text-white">
+                <Link to="/services/document-preparation" className="text-gray-600 hover:text-orange-500 transition duration-300">
                   Document Preparation
                 </Link>
               </li>
               <li>
-                <Link to="/services/business-law" className="text-gray-300 hover:text-white">
+                <Link to="/services/business-law" className="text-gray-600 hover:text-orange-500 transition duration-300">
                   Business Law
                 </Link>
               </li>
@@ -71,14 +72,10 @@ const Footer: React.FC = () => {
           {/* Contact Info */}
           <div>
             <h4 className="text-lg font-semibold mb-4">Contact</h4>
-            <ul className="space-y-2">
-              <li className="text-gray-300">
-                Email: info@legalaxis.com
-              </li>
-              <li className="text-gray-300">
-                Phone: (555) 123-4567
-              </li>
-              <li className="text-gray-300">
+            <ul className="space-y-2 text-gray-600">
+              <li>Email: info@legalaxis.com</li>
+              <li>Phone: (555) 123-4567</li>
+              <li>
                 Address: 123 Legal Street, Suite 100<br />
                 New York, NY 10001
               </li>
@@ -87,13 +84,13 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Social Media Links */}
-        <div className="mt-12 pt-8 border-t border-gray-800">
+        <div className="mt-12 pt-8 border-t border-gray-200">
           <div className="flex justify-center space-x-6">
             <a
               href="https://facebook.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-300 hover:text-white transition-colors duration-200"
+              className="text-gray-600 hover:text-orange-500 transition duration-200"
             >
               <span className="sr-only">Facebook</span>
               <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -104,7 +101,7 @@ const Footer: React.FC = () => {
               href="https://twitter.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-300 hover:text-white transition-colors duration-200"
+              className="text-gray-600 hover:text-orange-500 transition duration-200"
             >
               <span className="sr-only">Twitter</span>
               <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -115,7 +112,7 @@ const Footer: React.FC = () => {
               href="https://linkedin.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-300 hover:text-white transition-colors duration-200"
+              className="text-gray-600 hover:text-orange-500 transition duration-200"
             >
               <span className="sr-only">LinkedIn</span>
               <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -126,7 +123,7 @@ const Footer: React.FC = () => {
         </div>
 
         {/* Copyright */}
-        <div className="mt-8 text-center text-gray-300 text-sm">
+        <div className="mt-8 text-center text-gray-500 text-sm">
           © {new Date().getFullYear()} Legal Axis. All rights reserved.
         </div>
       </div>
@@ -134,4 +131,5 @@ const Footer: React.FC = () => {
   );
 };
 
-export default Footer; 
+export default Footer;
+

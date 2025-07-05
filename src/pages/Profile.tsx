@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -7,7 +8,8 @@ import { db, storage } from '../config/firebase';
 interface UserData {
   userType: 'lawyer' | 'client';
   email: string;
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   specialization?: string[];
   experience?: number;
   bio?: string;
@@ -16,7 +18,8 @@ interface UserData {
   languages?: string[];
   contactEmail?: string;
   contactPhone?: string;
-  officeAddress?: string;
+  state?: string;
+  postalCode?: string;
   profilePicture?: string;
 }
 
@@ -61,7 +64,6 @@ export default function Profile() {
     const { value } = e.target;
     setFormData(prev => {
       if (!prev) return null;
-      const currentArray = prev[field] as string[] || [];
       return {
         ...prev,
         [field]: value.split(',').map(item => item.trim()).filter(Boolean)
@@ -83,17 +85,9 @@ export default function Profile() {
     try {
       setUploadingImage(true);
       setError('');
-      
-      // Create a reference to the file location in Firebase Storage
       const storageRef = ref(storage, `profile-pictures/${user.uid}`);
-      
-      // Upload the file
       await uploadBytes(storageRef, file);
-      
-      // Get the download URL
       const downloadURL = await getDownloadURL(storageRef);
-      
-      // Update the user data with the new profile picture URL
       if (formData) {
         const updatedData = { ...formData, profilePicture: downloadURL };
         await updateDoc(doc(db, 'users', user.uid), updatedData);
@@ -116,8 +110,8 @@ export default function Profile() {
     try {
       setError('');
       setSuccess('');
-      const userData = { ...formData };
-      await updateDoc(doc(db, 'users', user.uid), userData);
+      const updated = { ...formData };
+      await updateDoc(doc(db, 'users', user.uid), updated);
       setUserData(formData);
       setIsEditing(false);
       setSuccess('Profile updated successfully');
@@ -167,14 +161,14 @@ export default function Profile() {
                 {userData.userType === 'lawyer' && (
                   <button
                     onClick={handleContactLawyer}
-                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
                   >
                     Contact Lawyer
                   </button>
                 )}
                 <button
                   onClick={() => setIsEditing(!isEditing)}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                 >
                   {isEditing ? 'Cancel' : 'Edit Profile'}
                 </button>
@@ -194,11 +188,11 @@ export default function Profile() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Profile Picture Section */}
+              {/* Profile Picture Section - Do Not Edit */}
               <div className="flex flex-col items-center mb-6">
                 <div className="relative">
                   <img
-                    src={userData.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.name || 'User')}&size=200`}
+                    src={userData.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.firstName || 'User')}&size=200`}
                     alt="Profile"
                     className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
                   />
@@ -222,13 +216,9 @@ export default function Profile() {
                     </label>
                   )}
                 </div>
-                {isEditing && (
-                  <p className="mt-2 text-sm text-gray-500">
-                    Click the camera icon to upload a profile picture
-                  </p>
-                )}
               </div>
 
+              {/* Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Email</label>
@@ -241,88 +231,28 @@ export default function Profile() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <label className="block text-sm font-medium text-gray-700">First Name</label>
                   <input
                     type="text"
-                    name="name"
-                    value={formData?.name || ''}
+                    name="firstName"
+                    value={formData?.firstName || ''}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                 </div>
 
-                {userData.userType === 'lawyer' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Specialization (comma-separated)</label>
-                      <input
-                        type="text"
-                        value={formData?.specialization?.join(', ') || ''}
-                        onChange={(e) => handleArrayInputChange(e, 'specialization')}
-                        disabled={!isEditing}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Experience (years)</label>
-                      <input
-                        type="number"
-                        name="experience"
-                        value={formData?.experience || ''}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700">Bio</label>
-                      <textarea
-                        name="bio"
-                        value={formData?.bio || ''}
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        rows={4}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Education (comma-separated)</label>
-                      <input
-                        type="text"
-                        value={formData?.education?.join(', ') || ''}
-                        onChange={(e) => handleArrayInputChange(e, 'education')}
-                        disabled={!isEditing}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Bar Associations (comma-separated)</label>
-                      <input
-                        type="text"
-                        value={formData?.barAssociations?.join(', ') || ''}
-                        onChange={(e) => handleArrayInputChange(e, 'barAssociations')}
-                        disabled={!isEditing}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Languages (comma-separated)</label>
-                      <input
-                        type="text"
-                        value={formData?.languages?.join(', ') || ''}
-                        onChange={(e) => handleArrayInputChange(e, 'languages')}
-                        disabled={!isEditing}
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
-                      />
-                    </div>
-                  </>
-                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Last Name</label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData?.lastName || ''}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Contact Email</label>
@@ -332,7 +262,7 @@ export default function Profile() {
                     value={formData?.contactEmail || ''}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                 </div>
 
@@ -344,19 +274,31 @@ export default function Profile() {
                     value={formData?.contactPhone || ''}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700">Office Address</label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">State</label>
                   <input
                     type="text"
-                    name="officeAddress"
-                    value={formData?.officeAddress || ''}
+                    name="state"
+                    value={formData?.state || ''}
                     onChange={handleInputChange}
                     disabled={!isEditing}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Postal Code</label>
+                  <input
+                    type="text"
+                    name="postalCode"
+                    value={formData?.postalCode || ''}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                 </div>
               </div>
@@ -365,7 +307,7 @@ export default function Profile() {
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
                   >
                     Save Changes
                   </button>
@@ -377,4 +319,4 @@ export default function Profile() {
       </div>
     </div>
   );
-} 
+}

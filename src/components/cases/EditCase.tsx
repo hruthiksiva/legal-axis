@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
+import { motion } from 'framer-motion';
 
 const categories = [
   'Family Law',
@@ -42,8 +44,7 @@ const EditCase: React.FC = () => {
         }
 
         const caseData = caseDoc.data();
-        
-        // Check if user is the owner of the case
+
         if (caseData.clientId !== user?.uid) {
           throw new Error('You are not authorized to edit this case');
         }
@@ -123,141 +124,70 @@ const EditCase: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    <motion.div className="min-h-screen bg-gray-50 py-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+      <motion.div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
+        <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
           <div className="p-6">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">Edit Case</h1>
 
             {error && (
-              <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-md">
+              <motion.div className="mb-4 p-4 bg-red-50 text-red-700 rounded-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 {error}
-              </div>
+              </motion.div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                  Case Title
-                </label>
-                <input
-                  type="text"
-                  id="title"
-                  name="title"
-                  required
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.title}
-                  onChange={handleChange}
-                />
-              </div>
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700">Case Title</label>
+                <input type="text" id="title" name="title" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500" value={formData.title} onChange={handleChange} />
+              </motion.div>
 
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                  Case Description
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  rows={4}
-                  required
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.description}
-                  onChange={handleChange}
-                />
-              </div>
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700">Case Description</label>
+                <textarea id="description" name="description" rows={4} required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500" value={formData.description} onChange={handleChange} />
+              </motion.div>
 
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-                  Category
-                </label>
-                <select
-                  id="category"
-                  name="category"
-                  required
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.category}
-                  onChange={handleChange}
-                >
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700">Category</label>
+                <select id="category" name="category" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500" value={formData.category} onChange={handleChange}>
                   <option value="">Select a category</option>
                   {categories.map(category => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
+                    <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
-              </div>
+              </motion.div>
 
-              <div>
-                <label htmlFor="budget" className="block text-sm font-medium text-gray-700">
-                  Budget
-                </label>
-                <input
-                  type="text"
-                  id="budget"
-                  name="budget"
-                  required
-                  placeholder="e.g., $5000 - $10000"
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.budget}
-                  onChange={handleChange}
-                />
-              </div>
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
+                <label htmlFor="budget" className="block text-sm font-medium text-gray-700">Budget</label>
+                <input type="text" id="budget" name="budget" required placeholder="e.g., $5000 - $10000" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500" value={formData.budget} onChange={handleChange} />
+              </motion.div>
 
-              <div>
-                <label htmlFor="deadline" className="block text-sm font-medium text-gray-700">
-                  Deadline
-                </label>
-                <input
-                  type="date"
-                  id="deadline"
-                  name="deadline"
-                  required
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.deadline}
-                  onChange={handleChange}
-                />
-              </div>
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+                <label htmlFor="deadline" className="block text-sm font-medium text-gray-700">Deadline</label>
+                <input type="date" id="deadline" name="deadline" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500" value={formData.deadline} onChange={handleChange} />
+              </motion.div>
 
-              <div>
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                  Status
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  required
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  value={formData.status}
-                  onChange={handleChange}
-                >
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}>
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700">Status</label>
+                <select id="status" name="status" required className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500" value={formData.status} onChange={handleChange}>
                   <option value="open">Open</option>
                   <option value="in-progress">In Progress</option>
                   <option value="closed">Closed</option>
                 </select>
-              </div>
+              </motion.div>
 
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => navigate(`/cases/${id}`)}
-                  className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                >
+              <motion.div className="flex justify-end space-x-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}>
+                <button type="button" onClick={() => navigate(`/cases/${id}`)} className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Cancel</button>
+                <button type="submit" disabled={saving} className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
                   {saving ? 'Saving...' : 'Save Changes'}
                 </button>
-              </div>
+              </motion.div>
             </form>
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
-export default EditCase; 
+export default EditCase;
