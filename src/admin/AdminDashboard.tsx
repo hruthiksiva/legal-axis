@@ -2,6 +2,7 @@ import { useAdminAuth } from '../contexts/AdminAuthContext';
 import ManageLawyers from './ManageLawyers';
 import AddLawyer from './AddLawyer';
 import ManageCases from './ManageCases'; // ✅ Manage Cases Import
+import AdminMilestones from './AdminMilestones'; // Import AdminMilestones
 
 const AdminDashboard = () => {
   const { logout, admin } = useAdminAuth();
@@ -35,9 +36,15 @@ const AdminDashboard = () => {
       </div>
 
       {/* Case Management */}
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-10">
         <h2 className="text-2xl font-semibold mb-4 text-gray-800">Manage Cases</h2>
         <ManageCases />
+      </div>
+
+      {/* Milestone Management */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-2xl font-semibold mb-4 text-gray-800">Manage Milestones</h2>
+        <AdminMilestones />
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 // Export commonly used Firebase services for use across the app
+export { app };                           // 🚀 Firebase app instance
 export const auth = getAuth(app);         // 🔐 For Firebase Authentication
 export const db = getFirestore(app);      // 🗃️ For Firestore Database
 export const storage = getStorage(app);   // 📁 For File/Media Storage (images, docs)

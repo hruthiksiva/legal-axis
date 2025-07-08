@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isCaseOwner(caseData) {
+      return isAuthenticated() && caseData.clientId == request.auth.uid;
+    }
+    
+    function isAssignedLawyer(caseData) {
+      return isAuthenticated() && caseData.assignedLawyerId == request.auth.uid;
+    }
+    
+    function canReadCase(caseData) {
+      return isCaseOwner(caseData) || isAssignedLawyer(caseData);
+    }
+    
+    function canWriteCase(caseData) {
+      return isCaseOwner(caseData);
+    }
+    
+    function isValidMilestone(milestone) {
+      return milestone.milestoneId is string &&
+             milestone.title is string &&
+             milestone.title.size() > 0 &&
+             milestone.title.size() <= 100 &&
+             milestone.description is string &&
+             milestone.description.size() > 0 &&
+             milestone.description.size() <= 500 &&
+             milestone.amount is number &&
+             milestone.amount > 0 &&
+             milestone.amount <= 1000000 &&
+             milestone.status in ['Pending', 'In Progress', 'Completed'] &&
+             milestone.createdAt is timestamp &&
+             milestone.updatedAt is timestamp;
+    }
+    
+    function isValidCase(caseData) {
+      return caseData.clientId is string &&
+             caseData.caseTitle is string &&
+             caseData.caseTitle.size() > 0 &&
+             caseData.caseTitle.size() <= 200 &&
+             caseData.caseDescription is string &&
+             caseData.caseDescription.size() > 0 &&
+             caseData.caseDescription.size() <= 2000 &&
+             caseData.milestones is list &&
+             caseData.createdAt is timestamp &&
+             caseData.updatedAt is timestamp;
+    }
+
+    // Cases collection rules
+    match /cases/{caseId} {
+      // Allow read if user is case owner or assigned lawyer
+      allow read: if isAuthenticated() && 
+        (resource.data.clientId == request.auth.uid || 
+         resource.data.assignedLawyerId == request.auth.uid);
+      
+      // Allow create if user is authenticated and creating their own case
+      allow create: if isAuthenticated() && 
+        request.resource.data.clientId == request.auth.uid &&
+        isValidCase(request.resource.data);
+      
+      // Allow update if user is case owner and data is valid
+      allow update: if isAuthenticated() && 
+        resource.data.clientId == request.auth.uid &&
+        request.resource.data.clientId == request.auth.uid &&
+        isValidCase(request.resource.data);
+      
+      // Allow delete if user is case owner
+      allow delete: if isAuthenticated() && 
+        resource.data.clientId == request.auth.uid;
+    }
+
+    // Users collection rules (for user profiles)
+    match /users/{userId} {
+      // Allow read/write if user is accessing their own profile
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Applications collection rules (if you have lawyer applications)
+    match /applications/{applicationId} {
+      // Allow read if user is the applicant or case owner
+      allow read: if isAuthenticated() && 
+        (resource.data.lawyerId == request.auth.uid ||
+         get(/databases/$(database)/documents/cases/$(resource.data.caseId)).data.clientId == request.auth.uid);
+      
+      // Allow create if user is authenticated lawyer
+      allow create: if isAuthenticated() && 
+        request.resource.data.lawyerId == request.auth.uid;
+      
+      // Allow update if user is the applicant
+      allow update: if isAuthenticated() && 
+        resource.data.lawyerId == request.auth.uid;
+      
+      // Allow delete if user is the applicant or case owner
+      allow delete: if isAuthenticated() && 
+        (resource.data.lawyerId == request.auth.uid ||
+         get(/databases/$(database)/documents/cases/$(resource.data.caseId)).data.clientId == request.auth.uid);
+    }
+
+    // Admin collection rules (if you have admin functionality)
+    match /admin/{document=**} {
+      // Only allow admin access - you can customize this based on your admin system
+      allow read, write: if false; // Disable by default, enable with proper admin checks
+    }
+
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

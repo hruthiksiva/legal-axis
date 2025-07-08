@@ -1,82 +1,38 @@
 import * as React from 'react';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, collection, addDoc, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../config/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { motion } from 'framer-motion';
-
-interface Case {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  status: string;
-  budget: string;
-  deadline: string;
-  clientId: string;
-  clientName: string;
-  createdAt: string;
-  applications?: Application[];
-}
-
-interface Application {
-  id: string;
-  lawyerId: string;
-  lawyerName: string;
-  proposal: string;
-  status: string;
-  createdAt: string;
-}
+import { getCaseById } from '../../services/caseService';
+import type { Case } from '../../types/case';
+import { MilestoneStatus } from '../../types/case';
+import AddMilestoneModal from './AddMilestoneModal';
+import { updateDoc, doc } from 'firebase/firestore';
+import { db } from '../../config/firebase';
 
 const CaseDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [caseData, setCaseData] = useState<Case | null>(null);
   const [loading, setLoading] = useState(true);
-  const [proposal, setProposal] = useState('');
-  const [showProposalForm, setShowProposalForm] = useState(false);
-  const { user } = useAuth();
+  const [showAddMilestoneModal, setShowAddMilestoneModal] = useState(false);
+  const { user, userData } = useAuth();
+  const [payingMilestone, setPayingMilestone] = useState<string | null>(null);
+  const [paidMilestones, setPaidMilestones] = useState<string[]>([]);
+  const [milestoneActionLoading, setMilestoneActionLoading] = useState<string | null>(null);
+  const [milestoneError, setMilestoneError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCase = async () => {
       try {
         if (!id) return;
 
-        const caseDoc = await getDoc(doc(db, 'cases', id));
-        if (!caseDoc.exists()) {
+        const caseData = await getCaseById(id);
+        if (!caseData) {
           throw new Error('Case not found');
         }
 
-        const caseData = caseDoc.data();
-        const applicationsQuery = query(
-          collection(db, 'applications'),
-          where('caseId', '==', id)
-        );
-        const applicationsSnapshot = await getDocs(applicationsQuery);
-        const applications = applicationsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate().toLocaleDateString() || 'N/A'
-        })) as Application[];
-
-        const caseDataRaw = caseDoc.data();
-
-        const caseDataFormatted: Case = {
-          id: caseDoc.id,
-          title: caseDataRaw.title,
-          description: caseDataRaw.description,
-          category: caseDataRaw.category,
-          status: caseDataRaw.status,
-          budget: caseDataRaw.budget,
-          deadline: caseDataRaw.deadline,
-          clientId: caseDataRaw.clientId,
-          clientName: caseDataRaw.clientName,
-          createdAt: caseDataRaw.createdAt?.toDate().toLocaleDateString() || 'N/A',
-          applications
-        };
-
-        setCaseData(caseDataFormatted);
+        setCaseData(caseData);
       } catch (error) {
         console.error('Error fetching case:', error);
       } finally {
@@ -87,25 +43,31 @@ const CaseDetail: React.FC = () => {
     fetchCase();
   }, [id]);
 
-  const handleApply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !id) return;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Open':
+        return 'bg-green-100 text-green-800';
+      case 'In Progress':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Closed':
+        return 'bg-gray-100 text-gray-800';
+      case 'On Hold':
+        return 'bg-orange-100 text-orange-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-    try {
-      await addDoc(collection(db, 'applications'), {
-        caseId: id,
-        lawyerId: user.uid,
-        lawyerName: user.displayName,
-        proposal,
-        status: 'pending',
-        createdAt: new Date()
-      });
-
-      setProposal('');
-      setShowProposalForm(false);
-      window.location.reload();
-    } catch (error) {
-      console.error('Error submitting application:', error);
+  const getMilestoneStatusColor = (status: MilestoneStatus) => {
+    switch (status) {
+      case MilestoneStatus.PENDING:
+        return 'bg-yellow-100 text-yellow-800';
+      case MilestoneStatus.IN_PROGRESS:
+        return 'bg-blue-100 text-blue-800';
+      case MilestoneStatus.COMPLETED:
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -129,7 +91,52 @@ const CaseDetail: React.FC = () => {
   }
 
   const isClient = user?.uid === caseData.clientId;
-  const hasApplied = caseData.applications?.some(app => app.lawyerId === user?.uid);
+  const isAssignedLawyer = user?.uid === caseData.assignedLawyerId;
+  const canView = isClient || isAssignedLawyer;
+
+  if (!canView) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You do not have permission to view this case.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleMilestoneAdded = () => {
+    // Refresh the case data to show the new milestone
+    if (id) {
+      getCaseById(id).then(setCaseData).catch(console.error);
+    }
+  };
+
+  const handleMilestoneStatus = async (milestoneId: string, newStatus: MilestoneStatus) => {
+    if (!caseData || !id) return;
+    setMilestoneActionLoading(milestoneId + newStatus);
+    setMilestoneError(null);
+    try {
+      // Update milestone status in Firestore
+      const updatedMilestones = caseData.milestones?.map(m =>
+        m.milestoneId === milestoneId ? { ...m, status: newStatus } : m
+      ) || [];
+      await updateDoc(doc(db, 'cases', id), { milestones: updatedMilestones });
+      setCaseData(prev => prev ? { ...prev, milestones: updatedMilestones } : prev);
+    } catch (err) {
+      setMilestoneError('Failed to update milestone status.');
+    } finally {
+      setMilestoneActionLoading(null);
+    }
+  };
+
+  const handleSimulatePayment = (milestoneId: string) => {
+    setPayingMilestone(milestoneId);
+    setTimeout(() => {
+      setPaidMilestones(prev => [...prev, milestoneId]);
+      setPayingMilestone(null);
+    }, 1200);
+  };
 
   return (
     <motion.div 
@@ -148,16 +155,12 @@ const CaseDetail: React.FC = () => {
           <div className="p-6">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">{caseData.title}</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{caseData.caseTitle}</h1>
                 <div className="flex items-center space-x-4">
-                  <span className={`px-3 py-1 text-sm font-semibold rounded-full ${
-                    caseData.status === 'open' ? 'bg-green-100 text-green-800' :
-                    caseData.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {caseData.status}
+                  <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(caseData.status || 'Open')}`}>
+                    {caseData.status || 'Open'}
                   </span>
-                  <span className="text-gray-500">Posted by {caseData.clientName}</span>
+                  <span className="text-gray-500">Created on {caseData.createdAt?.toDate?.()?.toLocaleDateString() || 'N/A'}</span>
                 </div>
               </div>
               {isClient && (
@@ -171,108 +174,125 @@ const CaseDetail: React.FC = () => {
             </div>
 
             <div className="prose max-w-none mb-8">
-              <p className="text-gray-600">{caseData.description}</p>
+              <p className="text-gray-600">{caseData.caseDescription}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-8">
+              {caseData.category && (
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Category</h3>
                 <p className="mt-1 text-gray-900">{caseData.category}</p>
               </div>
+              )}
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Budget</h3>
-                <p className="mt-1 text-gray-900">{caseData.budget}</p>
+                <h3 className="text-sm font-medium text-gray-500">Priority</h3>
+                <p className="mt-1 text-gray-900">{caseData.priority || 'Medium'}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Deadline</h3>
-                <p className="mt-1 text-gray-900">{caseData.deadline}</p>
+                <h3 className="text-sm font-medium text-gray-500">Total Amount</h3>
+                <p className="mt-1 text-gray-900">${caseData.milestones?.reduce((sum, m) => sum + m.amount, 0) || 0}</p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Posted On</h3>
-                <p className="mt-1 text-gray-900">{caseData.createdAt}</p>
+                <h3 className="text-sm font-medium text-gray-500">Milestones</h3>
+                <p className="mt-1 text-gray-900">{caseData.milestones?.length || 0} total</p>
               </div>
             </div>
 
-            {user?.userType === 'lawyer' && !isClient && !hasApplied && (
+            {/* Milestones Section */}
               <div className="mt-8">
-                {!showProposalForm ? (
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">Milestones</h2>
+                {isClient && (
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setShowProposalForm(true)}
-                    className="w-full px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowAddMilestoneModal(true)}
+                    className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    Apply for this Case
+                    <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Milestone
                   </motion.button>
-                ) : (
-                  <form onSubmit={handleApply} className="space-y-4">
-                    <div>
-                      <label htmlFor="proposal" className="block text-sm font-medium text-gray-700">
-                        Your Proposal
-                      </label>
-                      <textarea
-                        id="proposal"
-                        rows={4}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        value={proposal}
-                        onChange={(e) => setProposal(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-3">
-                      <button
-                        type="button"
-                        onClick={() => setShowProposalForm(false)}
-                        className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        Cancel
-                      </button>
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        type="submit"
-                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        Submit Application
-                      </motion.button>
-                    </div>
-                  </form>
                 )}
               </div>
-            )}
-
-            {isClient && caseData.applications && caseData.applications.length > 0 && (
-              <div className="mt-8">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Applications</h2>
                 <div className="space-y-4">
-                  {caseData.applications.map((application) => (
+                {caseData.milestones && caseData.milestones.length > 0 ? (
+                  caseData.milestones.map((milestone, index) => {
+                    const isPaid = paidMilestones.includes(milestone.milestoneId);
+                    return (
                     <motion.div
-                      key={application.id}
-                      className="border rounded-lg p-4"
+                        key={milestone.milestoneId}
+                        className="border rounded-lg p-4 bg-gray-50"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
                       whileHover={{ scale: 1.01 }}
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-lg font-medium text-gray-900">{application.lawyerName}</h3>
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          application.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          application.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {application.status}
-                        </span>
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-sm font-medium text-gray-500">#{index + 1}</span>
+                            <h3 className="text-lg font-medium text-gray-900">{milestone.title}</h3>
+                          </div>
+                          <div className="flex items-center space-x-3">
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getMilestoneStatusColor(milestone.status)}`}>{milestone.status}</span>
+                            <span className="text-lg font-semibold text-green-600">${milestone.amount}</span>
+                          </div>
                       </div>
-                      <p className="text-gray-600 mb-2">{application.proposal}</p>
-                      <div className="text-sm text-gray-500">
-                        Applied on {application.createdAt}
+                        <p className="text-gray-600 mb-3">{milestone.description}</p>
+                        <div className="flex flex-wrap gap-2 items-center">
+                          {(isClient || isAssignedLawyer) && milestone.status === MilestoneStatus.PENDING && (
+                            <button
+                              className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-xs"
+                              disabled={milestoneActionLoading === milestone.milestoneId + MilestoneStatus.IN_PROGRESS || !isPaid}
+                              onClick={() => handleMilestoneStatus(milestone.milestoneId, MilestoneStatus.IN_PROGRESS)}
+                            >
+                              {milestoneActionLoading === milestone.milestoneId + MilestoneStatus.IN_PROGRESS ? 'Marking...' : 'Mark In Progress'}
+                            </button>
+                          )}
+                          {(isClient || isAssignedLawyer) && milestone.status === MilestoneStatus.IN_PROGRESS && (
+                            <button
+                              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
+                              disabled={milestoneActionLoading === milestone.milestoneId + MilestoneStatus.COMPLETED || !isPaid}
+                              onClick={() => handleMilestoneStatus(milestone.milestoneId, MilestoneStatus.COMPLETED)}
+                            >
+                              {milestoneActionLoading === milestone.milestoneId + MilestoneStatus.COMPLETED ? 'Marking...' : 'Mark Completed'}
+                            </button>
+                          )}
+                          {/* Simulate Payment Button */}
+                          {!isPaid && (
+                            <button
+                              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                              disabled={payingMilestone === milestone.milestoneId}
+                              onClick={() => handleSimulatePayment(milestone.milestoneId)}
+                            >
+                              {payingMilestone === milestone.milestoneId ? 'Processing...' : 'Simulate Payment'}
+                            </button>
+                          )}
+                          {isPaid && <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Paid</span>}
                       </div>
+                        {milestoneError && <div className="text-red-600 text-xs mt-2">{milestoneError}</div>}
                     </motion.div>
-                  ))}
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No milestones found for this case.</p>
                 </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </motion.div>
       </div>
+
+      {/* Add Milestone Modal */}
+      <AddMilestoneModal
+        isOpen={showAddMilestoneModal}
+        onClose={() => setShowAddMilestoneModal(false)}
+        caseId={id || ''}
+        onMilestoneAdded={handleMilestoneAdded}
+      />
     </motion.div>
   );
 };
