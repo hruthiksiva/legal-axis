@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { AdminAuthProvider } from './contexts/AdminAuthContext';
+import { useCallback } from 'react';
+import { createDummyCaseChat } from './services/chatService';
 
 // Layout and shared components
 import Layout from './components/Layout';
@@ -43,7 +45,7 @@ const App = () => {
     <AdminAuthProvider>
       <AuthProvider>
         <Router>
-          <div className="pt-16"> {/* space for fixed navbar */}
+          <div className="pt-16">
             <Layout>
               <Routes>
                 {/* Public Pages */}

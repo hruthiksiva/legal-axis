@@ -107,6 +107,13 @@ service cloud.firestore {
       allow read, write: if false; // Disable by default, enable with proper admin checks
     }
 
+    // caseChats collection rules
+    match /caseChats/{chatId} {
+      allow read, write: if isAuthenticated() &&
+        (resource.data.participants[0] == request.auth.uid ||
+         resource.data.participants[1] == request.auth.uid);
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
