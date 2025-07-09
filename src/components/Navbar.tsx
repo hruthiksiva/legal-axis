@@ -2,6 +2,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { MessageCircle } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -106,6 +107,14 @@ const Navbar: React.FC = () => {
                     >
                       Logout
                     </button>
+                    {user && (
+                      <button
+                        onClick={() => navigate('/chat')}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                      >
+                        <span className="flex items-center"><MessageCircle className="w-5 h-5 mr-2" /> Chat</span>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -173,6 +182,14 @@ const Navbar: React.FC = () => {
                 >
                   Logout
                 </button>
+                {user && (
+                  <button
+                    onClick={() => { toggleMenu(); navigate('/chat'); }}
+                    className="block px-4 py-2 text-gray-600 hover:text-orange-500 hover:bg-orange-50 rounded-md w-full text-left"
+                  >
+                    <span className="flex items-center"><MessageCircle className="w-5 h-5 mr-2" /> Chat</span>
+                  </button>
+                )}
               </>
             ) : (
               <Link
