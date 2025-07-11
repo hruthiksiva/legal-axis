@@ -40,6 +40,9 @@ import EditLawyer from './admin/EditLawyer';
 import ManageCases from './admin/ManageCases';
 import ProtectedAdminRoute from './admin/ProtectedAdminRoute';
 
+// Chat landing page
+import ChatLandingPage from './components/cases/ChatLandingPage';
+
 const App = () => {
   return (
     <AdminAuthProvider>
@@ -72,6 +75,7 @@ const App = () => {
                 <Route path="/cases/create" element={<CreateCase />} />
                 <Route path="/cases/:id" element={<CaseDetail />} />
                 <Route path="/cases/:id/edit" element={<EditCase />} />
+                <Route path="/chat" element={<ChatLandingPage />} />
 
                 {/* Admin */}
                 <Route path="/admin" element={<AdminLogin />} />

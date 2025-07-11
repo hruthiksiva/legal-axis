@@ -12,8 +12,9 @@ interface UserData {
   lastName?: string;
   specialization?: string[];
   experience?: number;
+  rating?: number;
   bio?: string;
-  education?: string[];
+  education?: string;
   barAssociations?: string[];
   languages?: string[];
   contactEmail?: string;
@@ -22,6 +23,28 @@ interface UserData {
   postalCode?: string;
   profilePicture?: string;
 }
+
+const specializationOptions = [
+  'Criminal Law',
+  'Family Law',
+  'Corporate Law',
+  'Civil Law',
+  'Intellectual Property',
+  'Employment Law',
+  'Property Law',
+  'Tax Law'
+];
+
+const educationOptions = [
+  'LLB',
+  'LLM',
+  'BA LLB',
+  'BBA LLB',
+  'BCom LLB',
+  'PhD in Law',
+  'Diploma in Cyber Law',
+  'Diploma in Taxation Law'
+];
 
 export default function Profile() {
   const { user } = useAuth();
@@ -32,6 +55,8 @@ export default function Profile() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showSpecDropdown, setShowSpecDropdown] = useState(false);
+  const [showEduDropdown, setShowEduDropdown] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -60,6 +85,12 @@ export default function Profile() {
     setFormData(prev => prev ? { ...prev, [name]: value } : null);
   };
 
+  const handleNumberInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const numValue = value === '' ? undefined : Number(value);
+    setFormData(prev => prev ? { ...prev, [name]: numValue } : null);
+  };
+
   const handleArrayInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: keyof UserData) => {
     const { value } = e.target;
     setFormData(prev => {
@@ -69,6 +100,37 @@ export default function Profile() {
         [field]: value.split(',').map(item => item.trim()).filter(Boolean)
       };
     });
+  };
+
+  const handleSpecializationSelect = (spec: string) => {
+    if (!formData?.specialization?.includes(spec)) {
+      setFormData(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          specialization: [...(prev.specialization || []), spec]
+        };
+      });
+    }
+    setShowSpecDropdown(false);
+  };
+
+  const handleRemoveSpecialization = (spec: string) => {
+    setFormData(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        specialization: prev.specialization?.filter(s => s !== spec) || []
+      };
+    });
+  };
+
+  const handleEducationSelect = (edu: string) => {
+    setFormData(prev => {
+      if (!prev) return null;
+      return { ...prev, education: edu };
+    });
+    setShowEduDropdown(false);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -188,7 +250,7 @@ export default function Profile() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Profile Picture Section - Do Not Edit */}
+              {/* Profile Picture Section */}
               <div className="flex flex-col items-center mb-6">
                 <div className="relative">
                   <img
@@ -218,96 +280,256 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <input
-                    type="email"
-                    value={userData.email}
-                    disabled
-                    className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm text-gray-500"
-                  />
-                </div>
+              {/* Basic Information */}
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                    <input
+                      type="email"
+                      value={userData.email}
+                      disabled
+                      className="mt-1 block w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm text-gray-500"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">First Name</label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData?.firstName || ''}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">First Name</label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData?.firstName || ''}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Last Name</label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData?.lastName || ''}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Last Name</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData?.lastName || ''}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Contact Email</label>
-                  <input
-                    type="email"
-                    name="contactEmail"
-                    value={formData?.contactEmail || ''}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Contact Email</label>
+                    <input
+                      type="email"
+                      name="contactEmail"
+                      value={formData?.contactEmail || ''}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Contact Phone</label>
-                  <input
-                    type="tel"
-                    name="contactPhone"
-                    value={formData?.contactPhone || ''}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Contact Phone</label>
+                    <input
+                      type="tel"
+                      name="contactPhone"
+                      value={formData?.contactPhone || ''}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">State</label>
-                  <input
-                    type="text"
-                    name="state"
-                    value={formData?.state || ''}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">State</label>
+                    <input
+                      type="text"
+                      name="state"
+                      value={formData?.state || ''}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Postal Code</label>
-                  <input
-                    type="text"
-                    name="postalCode"
-                    value={formData?.postalCode || ''}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Postal Code</label>
+                    <input
+                      type="text"
+                      name="postalCode"
+                      value={formData?.postalCode || ''}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
                 </div>
               </div>
+
+              {/* Lawyer-specific Information */}
+              {userData.userType === 'lawyer' && (
+                <>
+                  {/* Professional Information */}
+                  <div className="bg-gray-50 p-6 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Professional Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Experience (years)</label>
+                        <input
+                          type="number"
+                          name="experience"
+                          value={formData?.experience || ''}
+                          onChange={handleNumberInputChange}
+                          disabled={!isEditing}
+                          min="0"
+                          max="50"
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">Rating (1-5)</label>
+                        <input
+                          type="number"
+                          name="rating"
+                          value={formData?.rating || ''}
+                          onChange={handleNumberInputChange}
+                          disabled={!isEditing}
+                          min="1"
+                          max="5"
+                          step="0.1"
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Specialization Tag Selector */}
+                    <div className="mt-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Specializations</label>
+                      <div className="relative">
+                        <div
+                          className="border p-3 rounded-md bg-white cursor-pointer min-h-[44px] flex items-center"
+                          onClick={() => isEditing && setShowSpecDropdown(!showSpecDropdown)}
+                        >
+                          {!formData?.specialization || formData.specialization.length === 0 ? (
+                            <span className="text-gray-400">Select Specializations</span>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                              {formData.specialization.map((spec) => (
+                                <span
+                                  key={spec}
+                                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                                >
+                                  {spec}
+                                  {isEditing && (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleRemoveSpecialization(spec);
+                                      }}
+                                      className="ml-1 text-red-600 hover:text-red-800"
+                                    >
+                                      ×
+                                    </button>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {showSpecDropdown && isEditing && (
+                          <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-40 overflow-auto">
+                            {specializationOptions.map((spec) => (
+                              <div
+                                key={spec}
+                                onClick={() => handleSpecializationSelect(spec)}
+                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                              >
+                                {spec}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Education Dropdown */}
+                    <div className="mt-6 relative">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Education</label>
+                      <div
+                        onClick={() => isEditing && setShowEduDropdown(!showEduDropdown)}
+                        className="w-full border p-3 rounded-md bg-white cursor-pointer"
+                      >
+                        {formData?.education || 'Select Education'}
+                      </div>
+                      {showEduDropdown && isEditing && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg max-h-40 overflow-auto">
+                          {educationOptions.map((edu) => (
+                            <div
+                              key={edu}
+                              onClick={() => handleEducationSelect(edu)}
+                              className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                            >
+                              {edu}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Languages */}
+                    <div className="mt-6">
+                      <label className="block text-sm font-medium text-gray-700">Languages Spoken (comma-separated)</label>
+                      <input
+                        type="text"
+                        name="languages"
+                        value={formData?.languages?.join(', ') || ''}
+                        onChange={(e) => handleArrayInputChange(e, 'languages')}
+                        disabled={!isEditing}
+                        placeholder="English, Spanish, French"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+
+                    {/* Bar Associations */}
+                    <div className="mt-6">
+                      <label className="block text-sm font-medium text-gray-700">Bar Associations (comma-separated)</label>
+                      <input
+                        type="text"
+                        name="barAssociations"
+                        value={formData?.barAssociations?.join(', ') || ''}
+                        onChange={(e) => handleArrayInputChange(e, 'barAssociations')}
+                        disabled={!isEditing}
+                        placeholder="State Bar Association, American Bar Association"
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+
+                    {/* Bio */}
+                    <div className="mt-6">
+                      <label className="block text-sm font-medium text-gray-700">Bio</label>
+                      <textarea
+                        name="bio"
+                        value={formData?.bio || ''}
+                        onChange={handleInputChange}
+                        disabled={!isEditing}
+                        rows={4}
+                        placeholder="Tell us about your legal expertise, experience, and what makes you unique..."
+                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               {isEditing && (
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                    className="px-6 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Save Changes
                   </button>

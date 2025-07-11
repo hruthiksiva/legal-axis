@@ -6,14 +6,22 @@ import { motion } from 'framer-motion';
 
 interface Lawyer {
   id: string;
-  name: string;
+  firstName?: string;
+  lastName?: string;
   specialization: string[];
   experience: number;
   rating: number;
-  imageUrl: string;
+  profilePicture?: string;
   bio: string;
   userType: string;
   email: string;
+  education?: string;
+  languages?: string[];
+  barAssociations?: string[];
+  contactEmail?: string;
+  contactPhone?: string;
+  state?: string;
+  postalCode?: string;
 }
 
 export default function LawyersList() {
@@ -24,13 +32,13 @@ export default function LawyersList() {
   const [loading, setLoading] = useState(true);
 
   const specializations = [
-    'Family Law',
     'Criminal Law',
+    'Family Law',
     'Corporate Law',
-    'Real Estate Law',
+    'Civil Law',
     'Intellectual Property',
-    'Immigration Law',
     'Employment Law',
+    'Property Law',
     'Tax Law',
   ];
 
@@ -39,17 +47,32 @@ export default function LawyersList() {
       try {
         const q = query(collection(db, 'users'), where('userType', '==', 'lawyer'));
         const querySnapshot = await getDocs(q);
-        const lawyersData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          name: doc.data().name || 'Unnamed Lawyer',
-          specialization: doc.data().specialization || [],
-          experience: doc.data().experience || 0,
-          rating: doc.data().rating || 0,
-          imageUrl: doc.data().imageUrl || '',
-          bio: doc.data().bio || 'No bio available',
-          userType: doc.data().userType || 'lawyer',
-          email: doc.data().email || '',
-        })) as Lawyer[];
+        const lawyersData = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          const firstName = data.firstName || '';
+          const lastName = data.lastName || '';
+          const fullName = `${firstName} ${lastName}`.trim() || 'Unnamed Lawyer';
+          
+          return {
+            id: doc.id,
+            firstName: data.firstName || '',
+            lastName: data.lastName || '',
+            specialization: data.specialization || [],
+            experience: data.experience || 0,
+            rating: data.rating || 0,
+            profilePicture: data.profilePicture || '',
+            bio: data.bio || 'No bio available',
+            userType: data.userType || 'lawyer',
+            email: data.email || '',
+            education: data.education || '',
+            languages: data.languages || [],
+            barAssociations: data.barAssociations || [],
+            contactEmail: data.contactEmail || '',
+            contactPhone: data.contactPhone || '',
+            state: data.state || '',
+            postalCode: data.postalCode || '',
+          } as Lawyer;
+        });
         setLawyers(lawyersData);
         setFilteredLawyers(lawyersData);
       } catch (error) {
@@ -66,11 +89,21 @@ export default function LawyersList() {
     let filtered = lawyers;
 
     if (searchTerm) {
-      filtered = filtered.filter(lawyer =>
-        lawyer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lawyer.bio.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (lawyer.specialization || []).some(spec => spec.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(lawyer => {
+        const fullName = `${lawyer.firstName} ${lawyer.lastName}`.toLowerCase();
+        const bioLower = lawyer.bio.toLowerCase();
+        const educationLower = (lawyer.education || '').toLowerCase();
+        const languagesLower = (lawyer.languages || []).join(' ').toLowerCase();
+        const barAssociationsLower = (lawyer.barAssociations || []).join(' ').toLowerCase();
+        
+        return fullName.includes(searchLower) ||
+               bioLower.includes(searchLower) ||
+               educationLower.includes(searchLower) ||
+               languagesLower.includes(searchLower) ||
+               barAssociationsLower.includes(searchLower) ||
+               (lawyer.specialization || []).some(spec => spec.toLowerCase().includes(searchLower));
+      });
     }
 
     if (selectedSpecialization) {
@@ -81,6 +114,12 @@ export default function LawyersList() {
 
     setFilteredLawyers(filtered);
   }, [searchTerm, selectedSpecialization, lawyers]);
+
+  const getFullName = (lawyer: Lawyer) => {
+    const firstName = lawyer.firstName || '';
+    const lastName = lawyer.lastName || '';
+    return `${firstName} ${lastName}`.trim() || 'Unnamed Lawyer';
+  };
 
   return (
     <motion.div 
@@ -109,7 +148,7 @@ export default function LawyersList() {
           <div className="flex-1">
             <input
               type="text"
-              placeholder="Search by name, specialization, or keywords..."
+              placeholder="Search by name, specialization, education, languages, or keywords..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -156,36 +195,105 @@ export default function LawyersList() {
                 }}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="bg-white rounded-2xl shadow-md overflow-hidden transition-shadow duration-300"
+                className="bg-white rounded-2xl shadow-md overflow-hidden transition-shadow duration-300 hover:shadow-lg"
               >
                 <div className="relative">
                   <img
                     src={
-                      lawyer.imageUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(lawyer.name)}&background=random&size=400`
+                      lawyer.profilePicture || `https://ui-avatars.com/api/?name=${encodeURIComponent(getFullName(lawyer))}&background=random&size=400`
                     }
-                    alt={lawyer.name}
+                    alt={getFullName(lawyer)}
                     className="w-full h-48 object-cover rounded-t-2xl"
                   />
+                  {lawyer.rating > 0 && (
+                    <div className="absolute top-3 right-3 bg-white bg-opacity-90 px-2 py-1 rounded-full flex items-center">
+                      <span className="text-yellow-400 text-sm">★</span>
+                      <span className="ml-1 text-sm font-medium">{lawyer.rating.toFixed(1)}</span>
+                    </div>
+                  )}
                 </div>
                 <Link to={`/lawyers/${lawyer.id}`} className="block p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{lawyer.name}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{getFullName(lawyer)}</h3>
+                  
+                  {/* Education */}
+                  {lawyer.education && (
+                    <p className="text-sm text-gray-500 mb-2">{lawyer.education}</p>
+                  )}
+                  
+                  {/* Specializations */}
                   <div className="flex flex-wrap gap-2 mb-3">
                     {(lawyer.specialization || []).map((spec) => (
                       <span
                         key={spec}
-                        className="px-2 py-1 text-sm bg-blue-100 text-blue-800 rounded-full"
+                        className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full"
                       >
                         {spec}
                       </span>
                     ))}
                   </div>
-                  <p className="text-gray-600 mb-4 line-clamp-2">{lawyer.bio}</p>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <span className="text-yellow-400">★</span>
-                      <span className="ml-1 text-gray-600">{lawyer.rating.toFixed(1)}</span>
+                  
+                  {/* Bio */}
+                  <p className="text-gray-600 mb-4 line-clamp-2 text-sm">{lawyer.bio}</p>
+                  
+                  {/* Languages */}
+                  {lawyer.languages && lawyer.languages.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-1">Languages:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {lawyer.languages.slice(0, 3).map((lang) => (
+                          <span
+                            key={lang}
+                            className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full"
+                          >
+                            {lang}
+                          </span>
+                        ))}
+                        {lawyer.languages.length > 3 && (
+                          <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                            +{lawyer.languages.length - 3} more
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-gray-600">{lawyer.experience} years experience</span>
+                  )}
+                  
+                  {/* Contact Info */}
+                  {(lawyer.contactEmail || lawyer.contactPhone) && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500 mb-1">Contact:</p>
+                      <div className="space-y-1">
+                        {lawyer.contactEmail && (
+                          <p className="text-xs text-blue-600 truncate">{lawyer.contactEmail}</p>
+                        )}
+                        {lawyer.contactPhone && (
+                          <p className="text-xs text-gray-600">{lawyer.contactPhone}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Location */}
+                  {(lawyer.state || lawyer.postalCode) && (
+                    <div className="mb-3">
+                      <p className="text-xs text-gray-500">
+                        📍 {lawyer.state} {lawyer.postalCode}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Experience and Rating */}
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                    <div className="flex items-center">
+                      {lawyer.rating > 0 && (
+                        <>
+                          <span className="text-yellow-400 text-sm">★</span>
+                          <span className="ml-1 text-sm text-gray-600">{lawyer.rating.toFixed(1)}</span>
+                        </>
+                      )}
+                    </div>
+                    <span className="text-sm text-gray-600">
+                      {lawyer.experience} {lawyer.experience === 1 ? 'year' : 'years'} experience
+                    </span>
                   </div>
                 </Link>
               </motion.div>
