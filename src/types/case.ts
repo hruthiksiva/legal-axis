@@ -40,6 +40,9 @@ export interface Case {
   tags?: string[];
   documents?: string[]; // Array of document URLs
   notes?: string;
+  // --- Added for chat and display ---
+  assignedLawyerName?: string;
+  clientName?: string;
 }
 
 // Case creation input type (without auto-generated fields)

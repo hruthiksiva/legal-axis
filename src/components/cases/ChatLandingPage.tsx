@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { getCasesByClientId, getCasesByLawyerId } from '../../services/caseService';
+import ChatBox from '../chat/ChatBox';
 
+// Extend the case type for local use
 interface CaseItem {
   id: string;
   title: string;
   clientId: string;
+  clientName?: string;
   assignedLawyerId?: string;
+  assignedLawyerName?: string;
   [key: string]: any;
 }
 
@@ -16,7 +19,7 @@ const ChatLandingPage: React.FC = () => {
   const [cases, setCases] = useState<CaseItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [openChat, setOpenChat] = useState<null | CaseItem>(null);
 
   useEffect(() => {
     const fetchCases = async () => {
@@ -30,14 +33,21 @@ const ChatLandingPage: React.FC = () => {
           userCases = clientCases.map(c => ({
             ...c,
             id: c.caseId,
-            title: c.caseTitle
+            title: c.caseTitle,
+            clientName: (userData as any).firstName ? `${(userData as any).firstName} ${(userData as any).lastName || ''}` : userData.email,
+            assignedLawyerId: c.assignedLawyerId,
+            assignedLawyerName: c.assignedLawyerName,
           }));
         } else if (userData.userType === 'lawyer') {
           const lawyerCases = await getCasesByLawyerId(user.uid);
           userCases = lawyerCases.map(c => ({
             ...c,
             id: c.caseId,
-            title: c.caseTitle
+            title: c.caseTitle,
+            clientId: c.clientId,
+            clientName: c.clientName,
+            assignedLawyerId: user.uid,
+            assignedLawyerName: (userData as any).firstName ? `${(userData as any).firstName} ${(userData as any).lastName || ''}` : userData.email,
           }));
         }
         setCases(userCases);
@@ -63,18 +73,42 @@ const ChatLandingPage: React.FC = () => {
           {cases.map((c) => (
             <li key={c.id} className="flex items-center justify-between border-b pb-2">
               <div>
-                <div className="font-semibold">{c.title || `Case #${c.id}`}</div>
-                <div className="text-xs text-gray-500">Case ID: {c.id}</div>
+                <div className="font-semibold text-lg">{c.title || `Case #${c.id}`}</div>
+                <div className="text-xs text-gray-500">
+                  {c.assignedLawyerName || c.assignedLawyerId ? (
+                    <>
+                      Assigned Lawyer: <span className="font-medium text-gray-700">{c.assignedLawyerName || c.assignedLawyerId}</span>
+                    </>
+                  ) : (
+                    <span className="italic text-gray-400">Unassigned</span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-400">Case ID: {c.id}</div>
               </div>
               <button
                 className="bg-blue-600 text-white px-4 py-1 rounded hover:bg-blue-700 transition"
-                onClick={() => navigate(`/chat/${c.id}`)}
+                onClick={() => setOpenChat(c)}
               >
                 Open Chat
               </button>
             </li>
           ))}
         </ul>
+      )}
+      {openChat && userData && user && (
+        <ChatBox
+          caseId={openChat.id}
+          clientId={userData.userType === 'client' ? user.uid : openChat.clientId}
+          clientName={userData.userType === 'client'
+            ? ((userData as any).firstName ? `${(userData as any).firstName} ${(userData as any).lastName || ''}` : userData.email)
+            : openChat.clientName || openChat.clientId || ''}
+          lawyerId={userData.userType === 'lawyer' ? user.uid : openChat.assignedLawyerId || ''}
+          lawyerName={userData.userType === 'lawyer'
+            ? ((userData as any).firstName ? `${(userData as any).firstName} ${(userData as any).lastName || ''}` : userData.email)
+            : openChat.assignedLawyerName || openChat.assignedLawyerId || ''}
+          userType={userData.userType}
+          onClose={() => setOpenChat(null)}
+        />
       )}
     </div>
   );

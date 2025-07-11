@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase';
 import { motion } from 'framer-motion';
@@ -21,6 +21,7 @@ interface Lawyer {
 
 const LawyerProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [lawyer, setLawyer] = useState<Lawyer | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +96,17 @@ const LawyerProfile: React.FC = () => {
               alt={lawyer.name}
               className="w-32 h-32 rounded-full border-4 border-white object-cover absolute -bottom-16 left-8"
             />
+            {/* Chat Button */}
+            <button
+              className="absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-lg transition"
+              onClick={() => navigate('/lawyer/chat')}
+              title="View Client Chats"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 15.75a6.75 6.75 0 01-2.458-1.393c-1.257-1.143-2.042-2.57-2.042-4.107C4.125 6.885 7.76 3.75 12 3.75s7.875 3.135 7.875 6.5c0 1.537-.785 2.964-2.042 4.107a6.75 6.75 0 01-2.458 1.393l-.13.043a.75.75 0 00-.495.7v.457a2.25 2.25 0 01-2.25 2.25h-1.5a2.25 2.25 0 01-2.25-2.25v-.457a.75.75 0 00-.495-.7l-.13-.043z" />
+              </svg>
+              Chat
+            </button>
           </div>
 
           <div className="pt-20 px-8 pb-10">

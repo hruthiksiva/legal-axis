@@ -42,6 +42,7 @@ import ProtectedAdminRoute from './admin/ProtectedAdminRoute';
 
 // Chat landing page
 import ChatLandingPage from './components/cases/ChatLandingPage';
+import LawyerChatLandingPage from './components/cases/LawyerChatLandingPage';
 
 const App = () => {
   return (
@@ -76,6 +77,9 @@ const App = () => {
                 <Route path="/cases/:id" element={<CaseDetail />} />
                 <Route path="/cases/:id/edit" element={<EditCase />} />
                 <Route path="/chat" element={<ChatLandingPage />} />
+                <Route path="/lawyer/chat" element={<LawyerChatLandingPage />} />
+                {/* Optionally, direct chat route for future use */}
+                {/* <Route path="/chat/:caseId" element={<ChatBoxPage />} /> */}
 
                 {/* Admin */}
                 <Route path="/admin" element={<AdminLogin />} />

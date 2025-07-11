@@ -36,6 +36,29 @@ import {
   generateMilestoneId
 } from '../utils/caseUtils';
 
+export interface Case {
+  caseId: string;
+  clientId: string;
+  caseTitle: string;
+  caseDescription: string;
+  milestones: Milestone[];
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  
+  // Additional fields that might be useful
+  status?: 'Open' | 'In Progress' | 'Closed' | 'On Hold';
+  category?: string;
+  priority?: 'Low' | 'Medium' | 'High' | 'Urgent';
+  assignedLawyerId?: string;
+  totalAmount?: number;
+  tags?: string[];
+  documents?: string[]; // Array of document URLs
+  notes?: string;
+  // --- Added for chat and display ---
+  assignedLawyerName?: string;
+  clientName?: string;
+}
+
 /**
  * Create a new case in Firestore
  */

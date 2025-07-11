@@ -1,5 +1,15 @@
-import { collection, doc, setDoc, getDoc, updateDoc, arrayUnion, Timestamp } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import {
+  collection,
+  doc,
+  getDoc,
+  setDoc,
+  addDoc,
+  onSnapshot,
+  serverTimestamp,
+  query,
+  orderBy
+} from 'firebase/firestore';
 import type { CaseChat, ChatMessage } from '../types/chat';
 
 const CASE_CHATS_COLLECTION = 'caseChats';
@@ -10,7 +20,7 @@ export const createCaseChat = async (caseId: string, clientId: string, lawyerId:
     caseId,
     participants: [clientId, lawyerId],
     messages: [],
-    lastUpdated: Timestamp.now(),
+    lastUpdated: serverTimestamp(),
   };
   await setDoc(chatRef, chatData);
   return chatRef.id;
@@ -23,10 +33,10 @@ export const addMessageToChat = async (chatId: string, message: Omit<ChatMessage
     ...message,
     messageId,
   };
-  await updateDoc(chatRef, {
-    messages: arrayUnion(newMessage),
-    lastUpdated: Timestamp.now(),
-  });
+  await setDoc(chatRef, {
+    messages: [newMessage],
+    lastUpdated: serverTimestamp(),
+  }, { merge: true });
   return messageId;
 };
 
@@ -49,7 +59,47 @@ export const createDummyCaseChat = async () => {
   await addMessageToChat(chatId, {
     senderId: dummyClientId,
     text: 'Hello, this is a dummy message!',
-    timestamp: Timestamp.now(),
+    timestamp: serverTimestamp(),
   });
   return chatId;
-}; 
+};
+
+// Get or create a chat document for a case and participants
+export async function getOrCreateChat(caseId: string, clientId: string, clientName: string, lawyerId: string, lawyerName: string) {
+  const chatId = `${caseId}_${clientId}_${lawyerId}`;
+  const chatRef = doc(db, 'chats', chatId);
+  const chatSnap = await getDoc(chatRef);
+  if (!chatSnap.exists()) {
+    await setDoc(chatRef, {
+      caseId,
+      clientId,
+      clientName,
+      lawyerId,
+      lawyerName,
+      participants: [clientId, lawyerId],
+      createdAt: serverTimestamp(),
+    });
+  }
+  return chatId;
+}
+
+// Send a message in a chat
+export async function sendMessage(chatId: string, senderId: string, senderName: string, text: string) {
+  const messagesRef = collection(db, 'chats', chatId, 'messages');
+  await addDoc(messagesRef, {
+    senderId,
+    senderName,
+    text,
+    timestamp: serverTimestamp(),
+  });
+}
+
+// Listen for messages in a chat (real-time)
+export function listenForMessages(chatId: string, callback: (messages: any[]) => void) {
+  const messagesRef = collection(db, 'chats', chatId, 'messages');
+  const q = query(messagesRef, orderBy('timestamp', 'asc'));
+  return onSnapshot(q, (snapshot) => {
+    const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    callback(messages);
+  });
+} 
